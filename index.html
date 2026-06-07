@@ -1,33 +1,934 @@
-<!doctype html>
-<html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="扣子编程，你的 AI 开发伙伴已就位" />
-    <title>扣子编程 - AI 开发伙伴</title>
-    <link rel="stylesheet" href="/styles/main.css" />
-  </head>
-  <body>
-    <div id="app">
-      <main class="main-wrapper">
-        <div class="content-container">
-          <img
-            src="https://lf-coze-web-cdn.coze.cn/obj/eden-cn/lm-lgvj/ljhwZthlaukjlkulzlp/coze-coding/icon/coze-coding.gif"
-            alt="扣子编程 Logo"
-            class="logo-image"
-          />
-          <div>
-            <div class="text-container">
-              <h1 class="heading">
-                应用开发中
-              </h1>
-              <p class="description">
-                请稍后，页面即将呈现
-              </p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImageCompress - Simple Image Compression</title>
+    <meta name="description" content="Fast, free image compression tool. Compress your images in seconds.">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.cn">
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+    <link href="https://fonts.googleapis.cn/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* 极简风格的拖拽区域 */
+        .drop-zone {
+            transition: all 0.3s ease;
+        }
+        .drop-zone.drag-over {
+            border-color: #0ea5e9;
+            background-color: #f0f9ff;
+            transform: scale(1.02);
+        }
+        
+        /* 压缩进度条 */
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        
+        /* 淡入动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* 旋转加载动画 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased">
+    <!-- 导航栏 -->
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <span class="text-xl font-semibold text-gray-900">ImageCompress</span>
+                </div>
+                
+                <!-- 用户信息 -->
+                <div id="userSection" class="flex items-center space-x-4">
+                    <!-- 未登录状态 -->
+                    <div id="loginButton" class="hidden">
+                        <button onclick="handleGoogleLogin()" class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                            </svg>
+                            <span class="text-sm font-medium text-gray-700">Sign in with Google</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 已登录状态 -->
+                    <div id="userInfo" class="hidden flex items-center space-x-3">
+                        <div class="flex items-center space-x-2 px-3 py-1.5 bg-primary-50 rounded-full">
+                            <svg class="w-4 h-4 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span id="pointsDisplay" class="text-sm font-semibold text-primary-700">0 Credits</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <img id="userAvatar" class="w-8 h-8 rounded-full" src="" alt="avatar">
+                            <span id="userName" class="text-sm font-medium text-gray-700"></span>
+                        </div>
+                        <button onclick="handleLogout()" class="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                            Sign out
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </main>
-    </div>
-  </body>
+    </nav>
+    
+    <!-- 主内容区 -->
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- 标题区 -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+                Compress Images Instantly
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Simple, fast, and secure image compression. No upload to servers - everything happens in your browser.
+            </p>
+        </div>
+        
+        <!-- 压缩配置 -->
+        <div class="mb-6">
+            <div class="bg-white rounded-xl border border-gray-200 p-6">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-700">Quality:</label>
+                        <input type="range" id="qualitySlider" min="10" max="100" value="80" 
+                               class="w-32 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                               onchange="updateQualityLabel()">
+                        <span id="qualityLabel" class="text-sm font-semibold text-primary-600 w-12">80%</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-700">Max Width:</label>
+                        <input type="number" id="maxWidthInput" value="1920" 
+                               class="w-24 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                               placeholder="px">
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <label class="text-sm font-medium text-gray-700">Format:</label>
+                        <select id="formatSelect" 
+                                class="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                            <option value="jpeg">JPEG</option>
+                            <option value="webp">WebP</option>
+                            <option value="png">PNG</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 上传区域 -->
+        <div id="dropZone" class="drop-zone bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center cursor-pointer hover:border-primary-400 hover:bg-primary-50/30 transition-all">
+            <input type="file" id="fileInput" accept="image/*" multiple class="hidden" onchange="handleFileSelect(event)">
+            
+            <div id="uploadPrompt" class="space-y-4">
+                <div class="flex justify-center">
+                    <svg class="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-lg font-medium text-gray-900">Drop images here or click to upload</p>
+                    <p class="text-sm text-gray-500 mt-1">PNG, JPG, WebP up to 10MB each</p>
+                </div>
+            </div>
+            
+            <!-- 处理进度 -->
+            <div id="progressArea" class="hidden space-y-4">
+                <div class="flex justify-center">
+                    <svg class="w-12 h-12 text-primary-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+                <p id="progressText" class="text-lg font-medium text-gray-900">Compressing...</p>
+                <div class="w-full max-w-md mx-auto bg-gray-200 rounded-full h-2">
+                    <div id="progressBar" class="progress-bar bg-primary-600 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 结果区域 -->
+        <div id="resultArea" class="hidden mt-8 space-y-4">
+            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-900">Compression Results</h3>
+                </div>
+                <div id="resultList" class="divide-y divide-gray-200">
+                    <!-- 动态插入结果 -->
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <button onclick="clearResults()" class="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    Clear Results
+                </button>
+            </div>
+        </div>
+        
+        <!-- 点数不足提示 -->
+        <div id="noPointsModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 fade-in">
+                <div class="text-center space-y-4">
+                    <div class="flex justify-center">
+                        <svg class="w-16 h-16 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900">Insufficient Credits</h3>
+                    <p class="text-gray-600">You need at least 1 credit to compress an image. Please purchase more credits to continue.</p>
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button onclick="handlePurchase()" class="flex-1 px-4 py-2.5 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition-colors">
+                            Buy Credits
+                        </button>
+                        <button onclick="closeNoPointsModal()" class="flex-1 px-4 py-2.5 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 购买套餐 -->
+        <div id="purchaseModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 fade-in">
+                <div class="space-y-4">
+                    <div class="text-center">
+                        <h3 class="text-xl font-semibold text-gray-900">Purchase Credits</h3>
+                        <p class="text-sm text-gray-500 mt-1">Choose a package that suits your needs</p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="initiatePayment(100, 5)" class="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all text-left group">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold text-gray-900">100 Credits</p>
+                                    <p class="text-sm text-gray-500">Perfect for trying out</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-primary-600">$5</p>
+                                    <p class="text-xs text-gray-500">$0.05/credit</p>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button onclick="initiatePayment(500, 20)" class="w-full p-4 border-2 border-primary-500 bg-primary-50 rounded-xl text-left relative">
+                            <span class="absolute -top-2 right-4 px-2 py-0.5 bg-primary-600 text-white text-xs font-medium rounded-full">Popular</span>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold text-gray-900">500 Credits</p>
+                                    <p class="text-sm text-gray-500">Great for regular use</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-primary-600">$20</p>
+                                    <p class="text-xs text-gray-500">$0.04/credit</p>
+                                </div>
+                            </div>
+                        </button>
+                        
+                        <button onclick="initiatePayment(2000, 70)" class="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-primary-500 hover:bg-primary-50 transition-all text-left group">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-semibold text-gray-900">2000 Credits</p>
+                                    <p class="text-sm text-gray-500">Best value for professionals</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-xl font-bold text-primary-600">$70</p>
+                                    <p class="text-xs text-gray-500">$0.035/credit</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <button onclick="closePurchaseModal()" class="w-full px-4 py-2.5 text-gray-700 font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 提示信息 -->
+        <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+            <div class="bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-2 fade-in">
+                <svg id="toastIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"></svg>
+                <span id="toastMessage"></span>
+            </div>
+        </div>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="border-t border-gray-200 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center text-sm text-gray-500">
+                <p>&copy; 2024 ImageCompress. All images processed locally in your browser.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // ============================================
+        // 配置区 - 根据部署环境修改
+        // ============================================
+        const CONFIG = {
+            // Workers API 地址（部署后替换为实际地址）
+            API_BASE: window.location.origin,
+            
+            // Google OAuth Client ID（需在 Cloudflare Workers 环境变量中配置）
+            GOOGLE_CLIENT_ID: '', // 运行时从后端获取
+            
+            // 支持的图片格式
+            SUPPORTED_FORMATS: ['image/jpeg', 'image/png', 'image/webp'],
+            
+            // 最大文件大小（10MB）
+            MAX_FILE_SIZE: 10 * 1024 * 1024,
+            
+            // 默认压缩质量
+            DEFAULT_QUALITY: 80,
+            
+            // 默认最大宽度
+            DEFAULT_MAX_WIDTH: 1920
+        };
+        
+        // ============================================
+        // 状态管理
+        // ============================================
+        let state = {
+            user: null,
+            points: 0,
+            idToken: null,
+            isProcessing: false
+        };
+        
+        // ============================================
+        // 初始化
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 初始化拖拽上传
+            initDropZone();
+            
+            // 检查登录状态
+            await checkAuthStatus();
+            
+            // 获取 Google Client ID
+            await fetchGoogleClientId();
+        });
+        
+        // ============================================
+        // Google 登录相关
+        // ============================================
+        
+        // 获取 Google Client ID
+        async function fetchGoogleClientId() {
+            try {
+                const response = await fetch(`${CONFIG.API_BASE}/api/config`);
+                const data = await response.json();
+                if (data.googleClientId) {
+                    CONFIG.GOOGLE_CLIENT_ID = data.googleClientId;
+                    initGoogleSignIn();
+                }
+            } catch (error) {
+                console.error('Failed to fetch config:', error);
+            }
+        }
+        
+        // 初始化 Google Sign-In
+        function initGoogleSignIn() {
+            if (!CONFIG.GOOGLE_CLIENT_ID) return;
+            
+            google.accounts.id.initialize({
+                client_id: CONFIG.GOOGLE_CLIENT_ID,
+                callback: handleGoogleCallback,
+                auto_select: true
+            });
+            
+            // 如果已登录，显示登录按钮
+            if (!state.user) {
+                document.getElementById('loginButton').classList.remove('hidden');
+            }
+        }
+        
+        // 处理 Google 登录回调
+        async function handleGoogleCallback(response) {
+            const { credential } = response;
+            
+            // 发送到后端验证
+            try {
+                const res = await fetch(`${CONFIG.API_BASE}/api/auth/google`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ credential })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    state.user = data.user;
+                    state.points = data.points;
+                    state.idToken = credential;
+                    
+                    // 保存到 localStorage
+                    localStorage.setItem('idToken', credential);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    // 更新 UI
+                    updateUserUI();
+                    showToast('Signed in successfully!', 'success');
+                } else {
+                    showToast(data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showToast('Login failed. Please try again.', 'error');
+            }
+        }
+        
+        // 触发 Google 登录
+        function handleGoogleLogin() {
+            if (CONFIG.GOOGLE_CLIENT_ID) {
+                google.accounts.id.prompt();
+            } else {
+                showToast('Google Sign-In not configured', 'error');
+            }
+        }
+        
+        // 登出
+        function handleLogout() {
+            state.user = null;
+            state.points = 0;
+            state.idToken = null;
+            localStorage.removeItem('idToken');
+            localStorage.removeItem('user');
+            updateUserUI();
+            showToast('Signed out successfully', 'success');
+        }
+        
+        // 检查登录状态
+        async function checkAuthStatus() {
+            const savedToken = localStorage.getItem('idToken');
+            const savedUser = localStorage.getItem('user');
+            
+            if (savedToken && savedUser) {
+                try {
+                    // 验证 token 是否有效
+                    const res = await fetch(`${CONFIG.API_BASE}/api/user/points`, {
+                        headers: { 'Authorization': `Bearer ${savedToken}` }
+                    });
+                    
+                    if (res.ok) {
+                        const data = await res.json();
+                        state.user = JSON.parse(savedUser);
+                        state.points = data.points;
+                        state.idToken = savedToken;
+                        updateUserUI();
+                    } else {
+                        // Token 无效，清除
+                        localStorage.removeItem('idToken');
+                        localStorage.removeItem('user');
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                }
+            }
+        }
+        
+        // ============================================
+        // 点数相关
+        // ============================================
+        
+        // 更新点数显示
+        function updatePointsUI() {
+            document.getElementById('pointsDisplay').textContent = `${state.points} Credits`;
+        }
+        
+        // 获取当前点数
+        async function fetchPoints() {
+            if (!state.idToken) return;
+            
+            try {
+                const res = await fetch(`${CONFIG.API_BASE}/api/user/points`, {
+                    headers: { 'Authorization': `Bearer ${state.idToken}` }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    state.points = data.points;
+                    updatePointsUI();
+                }
+            } catch (error) {
+                console.error('Failed to fetch points:', error);
+            }
+        }
+        
+        // 扣除点数
+        async function deductPoints(amount) {
+            if (!state.idToken) return false;
+            
+            try {
+                const res = await fetch(`${CONFIG.API_BASE}/api/user/deduct`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.idToken}`
+                    },
+                    body: JSON.stringify({ amount })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    state.points = data.points;
+                    updatePointsUI();
+                    return true;
+                } else {
+                    // 点数不足
+                    showNoPointsModal();
+                    return false;
+                }
+            } catch (error) {
+                console.error('Failed to deduct points:', error);
+                return false;
+            }
+        }
+        
+        // ============================================
+        // 图片压缩（核心功能）
+        // ============================================
+        
+        // 初始化拖拽上传
+        function initDropZone() {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            
+            // 点击上传
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            // 拖拽事件
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+        }
+        
+        // 处理文件选择
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            handleFiles(files);
+        }
+        
+        // 处理文件
+        async function handleFiles(files) {
+            // 检查登录
+            if (!state.user) {
+                showToast('Please sign in first', 'error');
+                return;
+            }
+            
+            // 检查是否有文件
+            if (!files || files.length === 0) return;
+            
+            // 检查点数
+            if (state.points < files.length) {
+                showNoPointsModal();
+                return;
+            }
+            
+            // 显示处理中状态
+            state.isProcessing = true;
+            showProgress(0, `Processing ${files.length} image(s)...`);
+            
+            let processed = 0;
+            let successCount = 0;
+            const results = [];
+            
+            for (const file of files) {
+                // 验证文件
+                if (!validateFile(file)) {
+                    processed++;
+                    continue;
+                }
+                
+                // 扣除点数
+                const deducted = await deductPoints(1);
+                if (!deducted) {
+                    break;
+                }
+                
+                try {
+                    // 压缩图片
+                    const result = await compressImage(file);
+                    if (result) {
+                        results.push(result);
+                        successCount++;
+                        
+                        // 自动下载
+                        downloadFile(result.blob, result.filename);
+                    }
+                } catch (error) {
+                    console.error('Compression failed:', error);
+                    showToast(`Failed to compress ${file.name}`, 'error');
+                }
+                
+                processed++;
+                showProgress((processed / files.length) * 100, `Processing ${processed}/${files.length}...`);
+            }
+            
+            // 显示结果
+            if (results.length > 0) {
+                showResults(results);
+                showToast(`Successfully compressed ${successCount} image(s)`, 'success');
+            }
+            
+            // 重置状态
+            hideProgress();
+            state.isProcessing = false;
+            document.getElementById('fileInput').value = '';
+        }
+        
+        // 验证文件
+        function validateFile(file) {
+            // 检查类型
+            if (!CONFIG.SUPPORTED_FORMATS.includes(file.type)) {
+                showToast(`Unsupported format: ${file.type}`, 'error');
+                return false;
+            }
+            
+            // 检查大小
+            if (file.size > CONFIG.MAX_FILE_SIZE) {
+                showToast(`File too large: ${file.name}`, 'error');
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // 压缩图片（原生 Canvas 实现）
+        async function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        try {
+                            // 获取压缩参数
+                            const quality = parseInt(document.getElementById('qualitySlider').value) / 100;
+                            const maxWidth = parseInt(document.getElementById('maxWidthInput').value) || CONFIG.DEFAULT_MAX_WIDTH;
+                            const format = document.getElementById('formatSelect').value;
+                            
+                            // 计算目标尺寸
+                            let width = img.width;
+                            let height = img.height;
+                            
+                            if (width > maxWidth) {
+                                height = (height * maxWidth) / width;
+                                width = maxWidth;
+                            }
+                            
+                            // 创建 Canvas
+                            const canvas = document.createElement('canvas');
+                            canvas.width = width;
+                            canvas.height = height;
+                            
+                            const ctx = canvas.getContext('2d');
+                            
+                            // 如果是 PNG 格式，保持透明度
+                            if (format === 'png') {
+                                ctx.clearRect(0, 0, width, height);
+                            } else {
+                                // JPEG/WebP 填充白色背景
+                                ctx.fillStyle = '#FFFFFF';
+                                ctx.fillRect(0, 0, width, height);
+                            }
+                            
+                            // 绘制图片
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            // 转换为 Blob
+                            const mimeType = format === 'png' ? 'image/png' : 
+                                            format === 'webp' ? 'image/webp' : 'image/jpeg';
+                            
+                            canvas.toBlob((blob) => {
+                                if (blob) {
+                                    // 生成文件名
+                                    const ext = format === 'jpeg' ? 'jpg' : format;
+                                    const baseName = file.name.replace(/\.[^/.]+$/, '');
+                                    const filename = `${baseName}_compressed.${ext}`;
+                                    
+                                    resolve({
+                                        originalName: file.name,
+                                        filename: filename,
+                                        originalSize: file.size,
+                                        compressedSize: blob.size,
+                                        blob: blob,
+                                        width: width,
+                                        height: height
+                                    });
+                                } else {
+                                    reject(new Error('Failed to compress image'));
+                                }
+                            }, mimeType, quality);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error('Failed to read file'));
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // 下载文件
+        function downloadFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // ============================================
+        // 支付相关
+        // ============================================
+        
+        // 显示点数不足模态框
+        function showNoPointsModal() {
+            document.getElementById('noPointsModal').classList.remove('hidden');
+        }
+        
+        // 关闭点数不足模态框
+        function closeNoPointsModal() {
+            document.getElementById('noPointsModal').classList.add('hidden');
+        }
+        
+        // 显示购买模态框
+        function handlePurchase() {
+            closeNoPointsModal();
+            document.getElementById('purchaseModal').classList.remove('hidden');
+        }
+        
+        // 关闭购买模态框
+        function closePurchaseModal() {
+            document.getElementById('purchaseModal').classList.add('hidden');
+        }
+        
+        // 发起支付
+        async function initiatePayment(credits, amount) {
+            if (!state.user || !state.idToken) {
+                showToast('Please sign in first', 'error');
+                return;
+            }
+            
+            closePurchaseModal();
+            showToast('Creating checkout session...', 'info');
+            
+            try {
+                const res = await fetch(`${CONFIG.API_BASE}/api/create-checkout`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${state.idToken}`
+                    },
+                    body: JSON.stringify({ credits, amount })
+                });
+                
+                const data = await res.json();
+                
+                if (data.url) {
+                    // 跳转到 Stripe 收银台
+                    window.location.href = data.url;
+                } else {
+                    showToast(data.error || 'Failed to create checkout', 'error');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                showToast('Payment initiation failed', 'error');
+            }
+        }
+        
+        // ============================================
+        // UI 更新函数
+        // ============================================
+        
+        // 更新用户界面
+        function updateUserUI() {
+            const loginButton = document.getElementById('loginButton');
+            const userInfo = document.getElementById('userInfo');
+            
+            if (state.user) {
+                loginButton.classList.add('hidden');
+                userInfo.classList.remove('hidden');
+                
+                document.getElementById('userName').textContent = state.user.name || 'User';
+                document.getElementById('userAvatar').src = state.user.picture || 'https://via.placeholder.com/32';
+                updatePointsUI();
+            } else {
+                loginButton.classList.remove('hidden');
+                userInfo.classList.add('hidden');
+            }
+        }
+        
+        // 显示进度
+        function showProgress(percent, text) {
+            document.getElementById('uploadPrompt').classList.add('hidden');
+            document.getElementById('progressArea').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = `${percent}%`;
+            document.getElementById('progressText').textContent = text;
+        }
+        
+        // 隐藏进度
+        function hideProgress() {
+            document.getElementById('uploadPrompt').classList.remove('hidden');
+            document.getElementById('progressArea').classList.add('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+        }
+        
+        // 显示结果
+        function showResults(results) {
+            const resultArea = document.getElementById('resultArea');
+            const resultList = document.getElementById('resultList');
+            
+            resultList.innerHTML = results.map(r => `
+                <div class="px-6 py-4 flex items-center justify-between fade-in">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">${r.filename}</p>
+                        <p class="text-sm text-gray-500">
+                            ${formatSize(r.originalSize)} → ${formatSize(r.compressedSize)}
+                            <span class="text-green-600 font-medium ml-2">
+                                -${Math.round((1 - r.compressedSize / r.originalSize) * 100)}%
+                            </span>
+                        </p>
+                    </div>
+                    <div class="ml-4 flex items-center space-x-3">
+                        <span class="text-xs text-gray-400">${r.width}×${r.height}</span>
+                        <button onclick="downloadFile(this.blob, this.filename)" 
+                                class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                            Download
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            // 存储 blob 引用
+            resultList.querySelectorAll('.fade-in').forEach((el, i) => {
+                const btn = el.querySelector('button');
+                if (btn && results[i]) {
+                    btn.blob = results[i].blob;
+                    btn.filename = results[i].filename;
+                }
+            });
+            
+            resultArea.classList.remove('hidden');
+        }
+        
+        // 清空结果
+        function clearResults() {
+            document.getElementById('resultArea').classList.add('hidden');
+            document.getElementById('resultList').innerHTML = '';
+        }
+        
+        // 更新质量标签
+        function updateQualityLabel() {
+            const value = document.getElementById('qualitySlider').value;
+            document.getElementById('qualityLabel').textContent = `${value}%`;
+        }
+        
+        // 显示提示
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            
+            toastMessage.textContent = message;
+            
+            // 设置图标
+            const icons = {
+                success: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>',
+                error: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>',
+                info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+            };
+            toastIcon.innerHTML = icons[type] || icons.info;
+            
+            // 显示
+            toast.classList.remove('hidden');
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 格式化文件大小
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+    </script>
+</body>
 </html>

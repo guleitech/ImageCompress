@@ -92,8 +92,8 @@
                 
                 <!-- 用户信息 -->
                 <div id="userSection" class="flex items-center space-x-4">
-                    <!-- 未登录状态 -->
-                    <div id="loginButton" class="hidden">
+                    <!-- 未登录状态 - 默认显示 -->
+                    <div id="loginButton">
                         <button onclick="handleGoogleLogin()" class="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                             <svg class="w-5 h-5" viewBox="0 0 24 24">
                                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -384,7 +384,11 @@
         
         // 初始化 Google Sign-In
         function initGoogleSignIn() {
-            if (!CONFIG.GOOGLE_CLIENT_ID) return;
+            if (!CONFIG.GOOGLE_CLIENT_ID) {
+                // 未配置 Client ID 时，提示用户
+                console.warn('Google Client ID not configured. Login button visible for demo.');
+                return;
+            }
             
             google.accounts.id.initialize({
                 client_id: CONFIG.GOOGLE_CLIENT_ID,
@@ -392,10 +396,7 @@
                 auto_select: true
             });
             
-            // 如果已登录，显示登录按钮
-            if (!state.user) {
-                document.getElementById('loginButton').classList.remove('hidden');
-            }
+            // 登录按钮始终可见，无需手动显示
         }
         
         // 处理 Google 登录回调
